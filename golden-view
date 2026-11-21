@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Golden Distributors ERP | Freelands Enterprises</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f6f4ee; color: #162219; }
+    .brand-green { background-color: #13311c; }
+    .brand-gold { background-color: #e8b339; }
+    .card-surface { background-color: #ffffff; border: 1px solid #e6e2d6; }
+    /* Epson LQ-310 2-Ply Continuous Dot-Matrix Print Layout */
+    @media print {
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        font-family: 'Courier New', Courier, monospace !important;
+        color: #000 !important;
+        background: #fff !important;
+        padding: 8mm;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="pb-24">
+
+  <!-- Top Header -->
+  <header class="brand-green text-white px-4 py-3 sticky top-0 z-30 shadow-md flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="brand-gold text-[#13311c] font-extrabold w-9 h-9 rounded-lg flex items-center justify-center text-lg">G</div>
+      <div>
+        <h1 class="font-bold text-base leading-tight">Golden Distributors</h1>
+        <p class="text-[11px] text-emerald-200">for Freelands Enterprises · 12 Routes</p>
+      </div>
+    </div>
+    <button onclick="switchTab('cheques')" class="bg-[#1e462a] border border-emerald-700 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
+      <span>Alerts</span>
+      <span id="alert-badge" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+    </button>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-3xl mx-auto p-4 space-y-4">
+
+    <!-- TAB 1: EXECUTIVE DASHBOARD -->
+    <section id="tab-dashboard" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-extrabold text-[#13311c]">Executive Dashboard</h2>
+          <p id="live-date" class="text-xs text-stone-500">Live position · Colombo Remote View Ready</p>
+        </div>
+        <button onclick="openScannerModal()" class="brand-gold text-[#13311c] font-bold text-xs px-3 py-2 rounded-lg shadow">
+          📷 Scan QR Settle
+        </button>
+      </div>
+
+      <!-- Combined Credit Card -->
+      <div class="brand-green text-white rounded-2xl p-5 shadow-md">
+        <div class="text-[11px] uppercase tracking-wider text-emerald-200 font-semibold">Combined Total Credit</div>
+        <div id="dash-total-credit" class="text-3xl font-extrabold mt-1">Rs. 0</div>
+        <div id="dash-open-bills" class="text-xs text-emerald-200 mt-1">0 open bills · 12 routes</div>
+      </div>
+
+      <!-- Territory Split -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="card-surface rounded-2xl p-4 border-l-4 border-l-[#13311c]">
+          <div class="text-[11px] font-bold text-stone-500 uppercase">Anuradhapura Territory (6 Routes)</div>
+          <div id="dash-anu-credit" class="text-2xl font-extrabold text-[#13311c] mt-1">Rs. 0</div>
+          <div id="dash-anu-pct" class="text-xs text-stone-500 mt-1">0% of total credit</div>
+        </div>
+        <div class="card-surface rounded-2xl p-4 border-l-4 border-l-amber-600">
+          <div class="text-[11px] font-bold text-stone-500 uppercase">Mihintale Territory (6 Routes)</div>
+          <div id="dash-mih-credit" class="text-2xl font-extrabold text-[#13311c] mt-1">Rs. 0</div>
+          <div id="dash-mih-pct" class="text-xs text-stone-500 mt-1">0% of total credit</div>
+        </div>
+      </div>
+
+      <!-- Today Summary -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="card-surface rounded-2xl p-4">
+          <div class="text-[11px] font-bold text-stone-500 uppercase">Collected Today</div>
+          <div id="dash-collected-today" class="text-xl font-extrabold text-emerald-800 mt-1">Rs. 0</div>
+          <div id="dash-collected-sub" class="text-[11px] text-stone-500 mt-1">Cash & Cheques</div>
+        </div>
+        <div class="card-surface rounded-2xl p-4">
+          <div class="text-[11px] font-bold text-stone-500 uppercase">Billed Today</div>
+          <div id="dash-billed-today" class="text-xl font-extrabold text-[#13311c] mt-1">Rs. 0</div>
+          <div id="dash-billed-count" class="text-[11px] text-stone-500 mt-1">0 bills</div>
+        </div>
+      </div>
+
+      <!-- Overdue & Cheques -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="card-surface rounded-2xl p-4 border-l-4 border-l-red-600">
+          <div class="text-[11px] font-bold text-red-700 uppercase">Overdue (15+ Days)</div>
+          <div id="dash-overdue" class="text-xl font-extrabold text-red-700 mt-1">Rs. 0</div>
+          <div id="dash-overdue-count" class="text-[11px] text-stone-500 mt-1">0 bills</div>
+        </div>
+        <div onclick="switchTab('cheques')" class="brand-gold rounded-2xl p-4 cursor-pointer shadow-sm">
+          <div class="text-[11px] font-bold text-[#13311c] uppercase">Cheques to Deposit</div>
+          <div id="dash-cheques-due" class="text-xl font-extrabold text-[#13311c] mt-1">Rs. 0</div>
+          <div id="dash-cheques-count" class="text-[11px] text-[#13311c] font-medium mt-1">0 due today/soon</div>
+        </div>
+      </div>
+
+      <!-- Credit Aging Breakdown -->
+      <div class="card-surface rounded-2xl p-4">
+        <h3 class="font-bold text-sm text-[#13311c] mb-3">Credit Aging Summary</h3>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="bg-emerald-50 p-2.5 rounded-xl">
+            <div class="text-[10px] font-bold text-emerald-800">0–14 DAYS</div>
+            <div id="aging-0-14" class="text-sm font-extrabold text-emerald-950 mt-1">Rs. 0</div>
+          </div>
+          <div class="bg-amber-50 p-2.5 rounded-xl">
+            <div class="text-[10px] font-bold text-amber-800">15–30 DAYS</div>
+            <div id="aging-15-30" class="text-sm font-extrabold text-amber-950 mt-1">Rs. 0</div>
+          </div>
+          <div class="bg-red-50 p-2.5 rounded-xl">
+            <div class="text-[10px] font-bold text-red-800">30+ DAYS</div>
+            <div id="aging-30-plus" class="text-sm font-extrabold text-red-950 mt-1">Rs. 0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Backup & Remote Sync Helper -->
+      <div class="card-surface rounded-2xl p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-sm text-[#13311c]">Data Backup & Transfer</h3>
+            <p class="text-[11px] text-stone-500">Export JSON backup to share between Anuradhapura & Colombo</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="exportData()" class="bg-[#13311c] text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Export</button>
+            <label class="bg-stone-200 text-stone-800 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer">
+              Import <input type="file" accept=".json" onchange="importData(event)" class="hidden" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: BILLS & QR PRINT / EVENING SETTLEMENT -->
+    <section id="tab-bills" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-extrabold text-[#13311c]">Daily Bills & QR Print</h2>
+        <button onclick="openScannerModal()" class="brand-gold text-[#13311c] font-bold text-xs px-3 py-2 rounded-lg">
+          📷 Evening QR Scan
+        </button>
+      </div>
+
+      <!-- New Bill Form -->
+      <div class="card-surface rounded-2xl p-4 space-y-3">
+        <h3 class="font-bold text-sm text-[#13311c]">Create New Invoice (Epson LQ-310 Ready)</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Select Shop (12 Routes)</label>
+            <select id="bill-shop" class="w-full mt-1 p-2.5 rounded-xl border border-stone-300 text-sm bg-white"></select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Payment Type</label>
+            <select id="bill-type" onchange="toggleChequeFields()" class="w-full mt-1 p-2.5 rounded-xl border border-stone-300 text-sm bg-white">
+              <option value="Credit">Credit Bill</option>
+              <option value="Cash">Cash Bill</option>
+              <option value="Cheque">Cheque Bill</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Bill Amount (Rs.)</label>
+            <input id="bill-amount" type="number" placeholder="e.g. 25000" class="w-full mt-1 p-2.5 rounded-xl border border-stone-300 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Initial Paid Today (Rs.)</label>
+            <input id="bill-paid" type="number" value="0" placeholder="0 for full credit" class="w-full mt-1 p-2.5 rounded-xl border border-stone-300 text-sm" />
+          </div>
+        </div>
+
+        <!-- Optional Cheque Fields -->
+        <div id="bill-cheque-fields" class="hidden grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-stone-200">
+          <input id="bill-chq-no" type="text" placeholder="Cheque No." class="p-2 rounded-lg border border-stone-300 text-xs" />
+          <input id="bill-chq-bank" type="text" placeholder="Bank (e.g. BOC / ComBank)" class="p-2 rounded-lg border border-stone-300 text-xs" />
+          <input id="bill-chq-date" type="date" class="p-2 rounded-lg border border-stone-300 text-xs" />
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-stone-600">Items Summary (Optional)</label>
+          <input id="bill-items" type="text" placeholder="e.g. Chili Powder 50kg, Curry Powder 30kg" class="w-full mt-1 p-2.5 rounded-xl border border-stone-300 text-sm" />
+        </div>
+
+        <button onclick="createBill()" class="w-full brand-green text-white font-bold py-3 rounded-xl text-sm shadow">
+          + Save Bill & Generate Large QR Code
+        </button>
+      </div>
+
+      <!-- Filter Bills -->
+      <div class="flex gap-2 overflow-x-auto pb-1">
+        <button onclick="renderBills('ALL')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-[#13311c] text-white">All Bills</button>
+        <button onclick="renderBills('OPEN')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-white border border-stone-300">Open Credit</button>
+        <button onclick="renderBills('PAID')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-white border border-stone-300">Settled</button>
+      </div>
+
+      <!-- Bills List -->
+      <div id="bills-list" class="space-y-3"></div>
+    </section>
+
+    <!-- TAB 3: 12 ROUTES & SHOPS -->
+    <section id="tab-shops" class="hidden space-y-4">
+      <h2 class="text-xl font-extrabold text-[#13311c]">12 Routes & Shop Directory</h2>
+
+      <!-- Add Shop Form -->
+      <div class="card-surface rounded-2xl p-4 space-y-3">
+        <h3 class="font-bold text-sm text-[#13311c]">Register New Shop</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Territory & Route (12 Routes)</label>
+            <select id="shop-route" class="w-full mt-1 p-2.5 rounded-xl border border-stone-300 text-sm bg-white"></select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Shop Name</label>
+            <input id="shop-name" type="text" placeholder="e.g. New Lanka Stores" class="w-full mt-1 p-2.5 rounded-xl border border-stone-300 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Owner / Phone</label>
+            <input id="shop-phone" type="text" placeholder="071XXXXXXX" class="w-full mt-1 p-2.5 rounded-xl border border-stone-300 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Credit Limit (Rs.)</label>
+            <input id="shop-limit" type="number" value="100000" class="w-full mt-1 p-2.5 rounded-xl border border-stone-300 text-sm" />
+          </div>
+        </div>
+        <button onclick="addShop()" class="w-full brand-green text-white font-bold py-2.5 rounded-xl text-sm">+ Add Shop to Route</button>
+      </div>
+
+      <div id="shops-list" class="space-y-2"></div>
+    </section>
+
+    <!-- TAB 4: CHEQUES & SMS ALERTS -->
+    <section id="tab-cheques" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-extrabold text-[#13311c]">Cheque Register & Alerts</h2>
+          <p class="text-xs text-stone-500">Alert Contacts: +94711980085 / +94781980085</p>
+        </div>
+      </div>
+
+      <!-- Add Standalone Cheque -->
+      <div class="card-surface rounded-2xl p-4 space-y-3">
+        <h3 class="font-bold text-sm text-[#13311c]">Record Received Cheque</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <select id="chq-shop" class="p-2.5 rounded-xl border border-stone-300 text-xs bg-white col-span-2"></select>
+          <input id="chq-number" type="text" placeholder="Cheque No." class="p-2.5 rounded-xl border border-stone-300 text-xs" />
+          <input id="chq-bank" type="text" placeholder="Bank Name" class="p-2.5 rounded-xl border border-stone-300 text-xs" />
+          <input id="chq-amount" type="number" placeholder="Amount (Rs.)" class="p-2.5 rounded-xl border border-stone-300 text-xs" />
+          <input id="chq-date" type="date" class="p-2.5 rounded-xl border border-stone-300 text-xs" />
+        </div>
+        <button onclick="addCheque()" class="w-full brand-green text-white font-bold py-2.5 rounded-xl text-sm">+ Save Cheque</button>
+      </div>
+
+      <div id="cheques-list" class="space-y-2"></div>
+    </section>
+
+    <!-- TAB 5: INVENTORY & MONTHLY PROFIT -->
+    <section id="tab-profit" class="hidden space-y-4">
+      <h2 class="text-xl font-extrabold text-[#13311c]">Inventory & Monthly Profit</h2>
+
+      <!-- Profit Calculator -->
+      <div class="card-surface rounded-2xl p-4 space-y-3">
+        <h3 class="font-bold text-sm text-[#13311c]">Monthly Net Profit Estimator</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Gross Sales (Rs.)</label>
+            <input id="prof-sales" type="number" oninput="calcProfit()" class="w-full mt-1 p-2 rounded-xl border border-stone-300 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Freelands Cost / COGS</label>
+            <input id="prof-cogs" type="number" oninput="calcProfit()" class="w-full mt-1 p-2 rounded-xl border border-stone-300 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Fuel & Van Expenses</label>
+            <input id="prof-fuel" type="number" value="45000" oninput="calcProfit()" class="w-full mt-1 p-2 rounded-xl border border-stone-300 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-stone-600">Staff & Warehouse</label>
+            <input id="prof-staff" type="number" value="85000" oninput="calcProfit()" class="w-full mt-1 p-2 rounded-xl border border-stone-300 text-sm" />
+          </div>
+        </div>
+        <div class="brand-green text-white rounded-xl p-4 flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase text-emerald-200">Estimated Net Profit</span>
+          <span id="prof-net" class="text-2xl font-extrabold">Rs. 0</span>
+        </div>
+      </div>
+
+      <!-- Stock Tracker -->
+      <div class="card-surface rounded-2xl p-4 space-y-3">
+        <h3 class="font-bold text-sm text-[#13311c]">Freelands Stock Balance</h3>
+        <div class="grid grid-cols-3 gap-2">
+          <input id="stk-name" type="text" placeholder="Product Name" class="p-2 rounded-lg border border-stone-300 text-xs col-span-2" />
+          <input id="stk-qty" type="number" placeholder="Qty (Packs/Kg)" class="p-2 rounded-lg border border-stone-300 text-xs" />
+        </div>
+        <button onclick="addStock()" class="w-full bg-stone-800 text-white font-bold py-2 rounded-xl text-xs">+ Update Stock Item</button>
+        <div id="stock-list" class="space-y-2 pt-2"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-2 py-2 flex justify-around items-center z-30 no-print">
+    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn text-[#13311c] font-bold flex flex-col items-center text-[11px]">
+      <span class="text-lg">📊</span><span>Dashboard</span>
+    </button>
+    <button onclick="switchTab('bills')" id="nav-bills" class="nav-btn text-stone-500 flex flex-col items-center text-[11px]">
+      <span class="text-lg">🧾</span><span>Bills & QR</span>
+    </button>
+    <button onclick="switchTab('shops')" id="nav-shops" class="nav-btn text-stone-500 flex flex-col items-center text-[11px]">
+      <span class="text-lg">🏪</span><span>12 Routes</span>
+    </button>
+    <button onclick="switchTab('cheques')" id="nav-cheques" class="nav-btn text-stone-500 flex flex-col items-center text-[11px]">
+      <span class="text-lg">🏦</span><span>Cheques</span>
+    </button>
+    <button onclick="switchTab('profit')" id="nav-profit" class="nav-btn text-stone-500 flex flex-col items-center text-[11px]">
+      <span class="text-lg">📦</span><span>Stock/Profit</span>
+    </button>
+  </nav>
+
+  <!-- QR PRINT PREVIEW MODAL (Epson LQ-310 2-Ply Layout) -->
+  <div id="print-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div id="print-area" class="border-2 border-dashed border-stone-400 p-4 text-center space-y-2">
+        <div class="font-extrabold text-lg tracking-wide">GOLDEN DISTRIBUTORS</div>
+        <div class="text-xs">Authorized Distributor - Freelands Enterprises</div>
+        <div class="text-xs">Anuradhapura & Mihintale | Tel: 071-1980085</div>
+        <hr class="border-black my-2" />
+        <!-- Large QR Code at Top for Easy Evening Scan -->
+        <div class="flex justify-center py-2">
+          <div id="print-qrcode" class="p-2 border-2 border-black bg-white"></div>
+        </div>
+        <div id="print-bill-id" class="font-bold text-sm"></div>
+        <hr class="border-black my-2" />
+        <div id="print-details" class="text-left text-xs space-y-1 font-mono"></div>
+        <hr class="border-black my-2" />
+        <div class="text-[11px] font-bold">Scan QR for Evening Payment Settlement</div>
+      </div>
+      <div class="flex gap-2 no-print">
+        <button onclick="window.print()" class="flex-1 brand-green text-white font-bold py-3 rounded-xl text-sm">🖨️ Print (LQ-310)</button>
+        <button onclick="closePrintModal()" class="px-4 py-3 bg-stone-200 rounded-xl font-bold text-sm">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENING QR SCANNER & SETTLEMENT MODAL -->
+  <div id="scanner-modal" class="fixed inset-0 bg-black/75 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold text-base text-[#13311c]">Evening QR Settlement</h3>
+        <button onclick="closeScannerModal()" class="text-stone-500 font-bold text-lg">✕</button>
+      </div>
+      <div id="qr-reader" class="w-full rounded-xl overflow-hidden bg-black"></div>
+      <div class="text-xs text-stone-500 text-center">Or select Bill ID manually below:</div>
+      <select id="manual-settle-bill" onchange="loadSettleBill(this.value)" class="w-full p-2.5 rounded-xl border border-stone-300 text-sm"></select>
+      <div id="settle-box" class="hidden bg-stone-100 p-3 rounded-xl space-y-2">
+        <div id="settle-info" class="text-xs font-bold text-[#13311c]"></div>
+        <input id="settle-amount" type="number" placeholder="Enter Paid Amount Today (Rs.)" class="w-full p-2.5 rounded-xl border border-stone-300 text-sm bg-white" />
+        <button onclick="applySettlement()" class="w-full brand-green text-white font-bold py-2.5 rounded-xl text-sm">✓ Update Balance</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ROUTES = [
+      "Anuradhapura - Route 01 (Town)",
+      "Anuradhapura - Route 02 (New Town)",
+      "Anuradhapura - Route 03 (Nochchiyagama)",
+      "Anuradhapura - Route 04 (Thalawa)",
+      "Anuradhapura - Route 05 (Eppawala)",
+      "Anuradhapura - Route 06 (Kekirawa)",
+      "Mihintale - Route 07 (Mihintale Town)",
+      "Mihintale - Route 08 (Rambewa)",
+      "Mihintale - Route 09 (Kahatagasdigiliya)",
+      "Mihintale - Route 10 (Horowpothana)",
+      "Mihintale - Route 11 (Galenbindunuwewa)",
+      "Mihintale - Route 12 (Thirappane)"
+    ];
+
+    // Default Sample Data so Dashboard works immediately
+    const defaultData = {
+      shops: [
+        { id: "S1", route: ROUTES[0], name: "Rajarata Super", phone: "0712345678", limit: 150000 },
+        { id: "S2", route: ROUTES[3], name: "Thalawa Stores", phone: "0771234567", limit: 100000 },
+        { id: "S3", route: ROUTES[6], name: "Mihintale Bakers & Mart", phone: "0719876543", limit: 200000 },
+        { id: "S4", route: ROUTES[8], name: "Digiliya Trade Center", phone: "0784561230", limit: 120000 }
+      ],
+      bills: [
+        { id: "GD-1001", shopId: "S1", date: daysAgo(3), type: "Credit", amount: 45000, paid: 15000, items: "Chili Powder 25kg, Curry 20kg" },
+        { id: "GD-1002", shopId: "S2", date: daysAgo(18), type: "Credit", amount: 68000, paid: 20000, items: "Turmeric 30kg, Pepper 10kg" },
+        { id: "GD-1003", shopId: "S3", date: daysAgo(2), type: "Credit", amount: 112000, paid: 32000, items: "Mixed Spices Bulk Pack" },
+        { id: "GD-1004", shopId: "S4", date: daysAgo(34), type: "Credit", amount: 54000, paid: 0, items: "Freelands Special Pack" }
+      ],
+      cheques: [
+        { id: "C1", shopId: "S1", number: "458921", bank: "BOC Anuradhapura", amount: 24400, date: daysAgo(0), status: "Pending" },
+        { id: "C2", shopId: "S3", number: "782104", bank: "Commercial Bank", amount: 35000, date: daysAgo(-2), status: "Pending" }
+      ],
+      stock: [
+        { name: "Chili Powder 100g (Freelands)", qty: 450 },
+        { name: "Curry Powder 100g (Freelands)", qty: 380 },
+        { name: "Turmeric Powder 50g", qty: 290 }
+      ]
+    };
+
+    function daysAgo(n) {
+      const d = new Date();
+      d.setDate(d.getDate() - n);
+      return d.toISOString().split('T')[0];
+    }
+
+    let db = JSON.parse(localStorage.getItem('gd_erp_db')) || defaultData;
+    function saveDB() {
+      localStorage.setItem('gd_erp_db', JSON.stringify(db));
+      refreshAll();
+    }
+
+    function fmt(num) {
+      return "Rs. " + Number(num || 0).toLocaleString('en-LK');
+    }
+
+    function switchTab(tab) {
+      ['dashboard', 'bills', 'shops', 'cheques', 'profit'].forEach(t => {
+        document.getElementById('tab-' + t).classList.add('hidden');
+        document.getElementById('nav-' + t).classList.remove('text-[#13311c]', 'font-bold');
+        document.getElementById('nav-' + t).classList.add('text-stone-500');
+      });
+      document.getElementById('tab-' + tab).classList.remove('hidden');
+      document.getElementById('nav-' + tab).classList.add('text-[#13311c]', 'font-bold');
+      document.getElementById('nav-' + tab).classList.remove('text-stone-500');
+    }
+
+    function initSelects() {
+      const routeSel = document.getElementById('shop-route');
+      routeSel.innerHTML = ROUTES.map(r => `<option value="${r}">${r}</option>`).join('');
+      updateShopSelects();
+    }
+
+    function updateShopSelects() {
+      const opts = db.shops.map(s => `<option value="${s.id}">${s.name} (${s.route.split(' - ')[0]})</option>`).join('');
+      document.getElementById('bill-shop').innerHTML = opts;
+      document.getElementById('chq-shop').innerHTML = opts;
+    }
+
+    function toggleChequeFields() {
+      const type = document.getElementById('bill-type').value;
+      document.getElementById('bill-cheque-fields').classList.toggle('hidden', type !== 'Cheque');
+    }
+
+    function createBill() {
+      const shopId = document.getElementById('bill-shop').value;
+      const type = document.getElementById('bill-type').value;
+      const amount = Number(document.getElementById('bill-amount').value);
+      const paid = type === 'Cash' ? amount : Number(document.getElementById('bill-paid').value || 0);
+      const items = document.getElementById('bill-items').value || "Freelands Products";
+
+      if (!shopId || amount <= 0) return alert("Please enter valid shop and amount.");
+
+      const newId = "GD-" + (1001 + db.bills.length);
+      const today = daysAgo(0);
+      db.bills.unshift({ id: newId, shopId, date: today, type, amount, paid, items });
+
+      if (type === 'Cheque') {
+        const number = document.getElementById('bill-chq-no').value || "CHQ-" + Math.floor(Math.random()*9000+1000);
+        const bank = document.getElementById('bill-chq-bank').value || "Bank";
+        const cdate = document.getElementById('bill-chq-date').value || today;
+        db.cheques.unshift({ id: "C" + Date.now(), shopId, number, bank, amount, date: cdate, status: "Pending" });
+      }
+
+      document.getElementById('bill-amount').value = '';
+      document.getElementById('bill-paid').value = '0';
+      document.getElementById('bill-items').value = '';
+      saveDB();
+      openPrintModal(newId);
+    }
+
+    function openPrintModal(billId) {
+      const bill = db.bills.find(b => b.id === billId);
+      const shop = db.shops.find(s => s.id === bill.shopId) || { name: "Shop", route: "" };
+      const bal = bill.amount - bill.paid;
+
+      document.getElementById('print-bill-id').innerText = `INVOICE: ${bill.id} | ${bill.date}`;
+      document.getElementById('print-details').innerHTML = `
+        <div><strong>Shop:</strong> ${shop.name}</div>
+        <div><strong>Route:</strong> ${shop.route}</div>
+        <div><strong>Type:</strong> ${bill.type}</div>
+        <div><strong>Items:</strong> ${bill.items}</div>
+        <div><strong>Gross Amount:</strong> ${fmt(bill.amount)}</div>
+        <div><strong>Paid Amount:</strong> ${fmt(bill.paid)}</div>
+        <div class="text-sm font-bold pt-1">BALANCE DUE: ${fmt(bal)}</div>
+      `;
+
+      const qrContainer = document.getElementById('print-qrcode');
+      qrContainer.innerHTML = "";
+      new QRCode(qrContainer, {
+        text: bill.id,
+        width: 150,
+        height: 150,
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.getElementById('print-modal').classList.remove('hidden');
+    }
+
+    function closePrintModal() {
+      document.getElementById('print-modal').classList.add('hidden');
+    }
+
+    let html5QrCode = null;
+    function openScannerModal() {
+      document.getElementById('scanner-modal').classList.remove('hidden');
+      const openBills = db.bills.filter(b => (b.amount - b.paid) > 0);
+      const sel = document.getElementById('manual-settle-bill');
+      sel.innerHTML = `<option value="">-- Select Open Bill --</option>` +
+        openBills.map(b => {
+          const s = db.shops.find(x => x.id === b.shopId);
+          return `<option value="${b.id}">${b.id} - ${s ? s.name : ''} (Bal: ${fmt(b.amount - b.paid)})</option>`;
+        }).join('');
+
+      try {
+        html5QrCode = new Html5Qrcode("qr-reader");
+        html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 200, height: 200 } },
+          (decodedText) => {
+            loadSettleBill(decodedText.trim());
+          }
+        ).catch(() => {});
+      } catch (e) {}
+    }
+
+    function closeScannerModal() {
+      if (html5QrCode) {
+        html5QrCode.stop().catch(() => {});
+      }
+      document.getElementById('scanner-modal').classList.add('hidden');
+      document.getElementById('settle-box').classList.add('hidden');
+    }
+
+    let activeSettleBillId = null;
+    function loadSettleBill(billId) {
+      const bill = db.bills.find(b => b.id === billId);
+      if (!bill) return;
+      activeSettleBillId = billId;
+      const shop = db.shops.find(s => s.id === bill.shopId);
+      const bal = bill.amount - bill.paid;
+      document.getElementById('settle-info').innerText = `${bill.id} · ${shop ? shop.name : ''} | Current Balance: ${fmt(bal)}`;
+      document.getElementById('settle-amount').value = bal;
+      document.getElementById('settle-box').classList.remove('hidden');
+    }
+
+    function applySettlement() {
+      const addPay = Number(document.getElementById('settle-amount').value || 0);
+      const bill = db.bills.find(b => b.id === activeSettleBillId);
+      if (!bill || addPay < 0) return;
+      bill.paid = Math.min(bill.amount, bill.paid + addPay);
+      saveDB();
+      closeScannerModal();
+      alert(`Updated ${bill.id}! Remaining Balance: ${fmt(bill.amount - bill.paid)}`);
+    }
+
+    function addShop() {
+      const route = document.getElementById('shop-route').value;
+      const name = document.getElementById('shop-name').value.trim();
+      const phone = document.getElementById('shop-phone').value.trim();
+      const limit = Number(document.getElementById('shop-limit').value || 100000);
+      if (!name) return alert("Enter shop name");
+      db.shops.push({ id: "S" + Date.now(), route, name, phone, limit });
+      document.getElementById('shop-name').value = '';
+      document.getElementById('shop-phone').value = '';
+      saveDB();
+      updateShopSelects();
+    }
+
+    function addCheque() {
+      const shopId = document.getElementById('chq-shop').value;
+      const number = document.getElementById('chq-number').value.trim();
+      const bank = document.getElementById('chq-bank').value.trim();
+      const amount = Number(document.getElementById('chq-amount').value);
+      const date = document.getElementById('chq-date').value || daysAgo(0);
+      if (!number || amount <= 0) return alert("Enter cheque number and amount");
+      db.cheques.unshift({ id: "C" + Date.now(), shopId, number, bank, amount, date, status: "Pending" });
+      document.getElementById('chq-number').value = '';
+      document.getElementById('chq-bank').value = '';
+      document.getElementById('chq-amount').value = '';
+      saveDB();
+    }
+
+    function markChequeDeposited(id) {
+      const c = db.cheques.find(x => x.id === id);
+      if (c) c.status = "Deposited";
+      saveDB();
+    }
+
+    function addStock() {
+      const name = document.getElementById('stk-name').value.trim();
+      const qty = Number(document.getElementById('stk-qty').value);
+      if (!name) return;
+      const existing = db.stock.find(s => s.name.toLowerCase() === name.toLowerCase());
+      if (existing) existing.qty = qty;
+      else db.stock.push({ name, qty });
+      document.getElementById('stk-name').value = '';
+      document.getElementById('stk-qty').value = '';
+      saveDB();
+    }
+
+    function calcProfit() {
+      const sales = Number(document.getElementById('prof-sales').value || 0);
+      const cogs = Number(document.getElementById('prof-cogs').value || 0);
+      const fuel = Number(document.getElementById('prof-fuel').value || 0);
+      const staff = Number(document.getElementById('prof-staff').value || 0);
+      document.getElementById('prof-net').innerText = fmt(sales - cogs - fuel - staff);
+    }
+
+    function renderBills(filter = 'ALL') {
+      const list = document.getElementById('bills-list');
+      const filtered = db.bills.filter(b => {
+        const bal = b.amount - b.paid;
+        if (filter === 'OPEN') return bal > 0;
+        if (filter === 'PAID') return bal <= 0;
+        return true;
+      });
+      list.innerHTML = filtered.map(b => {
+        const s = db.shops.find(x => x.id === b.shopId) || { name: "Shop", route: "" };
+        const bal = b.amount - b.paid;
+        return `
+          <div class="card-surface rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-extrabold text-sm text-[#13311c]">${b.id}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${bal > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                  ${bal > 0 ? 'Balance: ' + fmt(bal) : 'PAID'}
+                </span>
+              </div>
+              <div class="font-bold text-xs mt-1">${s.name}</div>
+              <div class="text-[11px] text-stone-500">${b.date} · Total: ${fmt(b.amount)}</div>
+            </div>
+            <button onclick="openPrintModal('${b.id}')" class="bg-[#13311c] text-white text-xs font-bold px-3 py-2 rounded-xl">
+              QR / Print
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function refreshAll() {
+      const today = daysAgo(0);
+      let totalCredit = 0, anuCredit = 0, mihCredit = 0, openBills = 0;
+      let billedToday = 0, billedCount = 0, collectedToday = 0;
+      let overdue = 0, overdueCount = 0;
+      let a0_14 = 0, a15_30 = 0, a30_plus = 0;
+
+      db.bills.forEach(b => {
+        const bal = Math.max(0, b.amount - b.paid);
+        const shop = db.shops.find(s => s.id === b.shopId);
+        const isAnu = shop && shop.route.startsWith("Anuradhapura");
+        const ageDays = Math.floor((new Date(today) - new Date(b.date)) / (1000 * 60 * 60 * 24));
+
+        if (b.date === today) {
+          billedToday += b.amount;
+          billedCount++;
+          collectedToday += b.paid;
+        }
+
+        if (bal > 0) {
+          totalCredit += bal;
+          openBills++;
+          if (isAnu) anuCredit += bal;
+          else mihCredit += bal;
+
+          if (ageDays <= 14) a0_14 += bal;
+          else if (ageDays <= 30) { a15_30 += bal; overdue += bal; overdueCount++; }
+          else { a30_plus += bal; overdue += bal; overdueCount++; }
+        }
+      });
+
+      document.getElementById('dash-total-credit').innerText = fmt(totalCredit);
+      document.getElementById('dash-open-bills').innerText = `${openBills} open bills · 12 routes`;
+      document.getElementById('dash-anu-credit').innerText = fmt(anuCredit);
+      document.getElementById('dash-mih-credit').innerText = fmt(mihCredit);
+
+      const anuPct = totalCredit ? Math.round((anuCredit / totalCredit) * 100) : 0;
+      const mihPct = totalCredit ? (100 - anuPct) : 0;
+      document.getElementById('dash-anu-pct').innerText = `${anuPct}% of total credit`;
+      document.getElementById('dash-mih-pct').innerText = `${mihPct}% of total credit`;
+
+      document.getElementById('dash-collected-today').innerText = fmt(collectedToday);
+      document.getElementById('dash-billed-today').innerText = fmt(billedToday);
+      document.getElementById('dash-billed-count').innerText = `${billedCount} bills`;
+      document.getElementById('dash-overdue').innerText = fmt(overdue);
+      document.getElementById('dash-overdue-count').innerText = `${overdueCount} bills`;
+
+      document.getElementById('aging-0-14').innerText = fmt(a0_14);
+      document.getElementById('aging-15-30').innerText = fmt(a15_30);
+      document.getElementById('aging-30-plus').innerText = fmt(a30_plus);
+
+      // Cheques
+      const pendingChq = db.cheques.filter(c => c.status === "Pending");
+      const chqSum = pendingChq.reduce((sum, c) => sum + c.amount, 0);
+      document.getElementById('dash-cheques-due').innerText = fmt(chqSum);
+      document.getElementById('dash-cheques-count').innerText = `${pendingChq.length} pending deposit`;
+      document.getElementById('alert-badge').innerText = pendingChq.length;
+
+      document.getElementById('cheques-list').innerHTML = db.cheques.map(c => {
+        const s = db.shops.find(x => x.id === c.shopId);
+        return `
+          <div class="card-surface rounded-2xl p-3.5 flex items-center justify-between">
+            <div>
+              <div class="font-bold text-xs text-[#13311c]">#${c.number} · ${c.bank} (${fmt(c.amount)})</div>
+              <div class="text-[11px] text-stone-500">${s ? s.name : ''} · Deposit Date: <strong>${c.date}</strong></div>
+            </div>
+            ${c.status === 'Pending'
+              ? `<button onclick="markChequeDeposited('${c.id}')" class="brand-gold text-[#13311c] text-xs font-bold px-3 py-1.5 rounded-lg">Deposit</button>`
+              : `<span class="text-xs font-bold text-emerald-700">✓ Deposited</span>`
+            }
+          </div>
+        `;
+      }).join('');
+
+      // Shops
+      document.getElementById('shops-list').innerHTML = db.shops.map(s => `
+        <div class="card-surface rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-xs text-[#13311c]">${s.name}</div>
+            <div class="text-[11px] text-stone-500">${s.route} · ${s.phone || 'No Phone'}</div>
+          </div>
+          <div class="text-xs font-bold text-stone-700">Limit: ${fmt(s.limit)}</div>
+        </div>
+      `).join('');
+
+      // Stock
+      document.getElementById('stock-list').innerHTML = db.stock.map(st => `
+        <div class="flex justify-between text-xs py-1.5 border-b border-stone-100">
+          <span class="font-medium">${st.name}</span>
+          <span class="font-bold text-[#13311c]">${st.qty} units</span>
+        </div>
+      `).join('');
+
+      // Default Profit Inputs
+      const totalBilledAll = db.bills.reduce((s, b) => s + b.amount, 0);
+      if (!document.getElementById('prof-sales').value) {
+        document.getElementById('prof-sales').value = totalBilledAll;
+        document.getElementById('prof-cogs').value = Math.round(totalBilledAll * 0.84);
+        calcProfit();
+      }
+
+      renderBills('ALL');
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `Golden_Distributors_Backup_${daysAgo(0)}.json`;
+      a.click();
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          db = JSON.parse(ev.target.result);
+          saveDB();
+          updateShopSelects();
+          alert("Data imported successfully!");
+        } catch (err) {
+          alert("Invalid backup file.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    initSelects();
+    refreshAll();
+  </script>
+</body>
+</html>
