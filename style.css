@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f6f4ee;
+  color: #162219;
+}
+
+.brand-green {
+  background-color: #13311c;
+}
+
+.brand-gold {
+  background-color: #e8b339;
+}
+
+.card-surface {
+  background-color: #ffffff;
+  border: 1px solid #e6e2d6;
+}
+
+/* Epson LQ-310 2-Ply Continuous Dot-Matrix Print Layout */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    font-family: 'Courier New', Courier, monospace !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    padding: 8mm;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
